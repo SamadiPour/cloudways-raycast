@@ -1,5 +1,6 @@
 import { ActionPanel, Action, Icon, List, getPreferenceValues } from "@raycast/api";
 import { useEffect, useState } from "react";
+import got from "got";
 
 const API_URL = "https://api.cloudways.com/api/v1";
 const API_KEY = getPreferenceValues().apiKey;
@@ -11,7 +12,7 @@ export default function Command() {
   useEffect(() => {
     async function fetchServers() {
       try {
-        const response = await fetch(`${API_URL}/server`, {
+        const response = await got.get(`${API_URL}/server`, {
           headers: {
             Authorization: `Bearer ${API_KEY}`,
           },
@@ -33,7 +34,6 @@ export default function Command() {
       {servers.map((server) => (
         <List.Item
           key={server.id}
-          icon={Icon.Server}
           title={server.label}
           subtitle={server.public_ip}
           accessories={[{ icon: Icon.Text, text: server.status }]}
