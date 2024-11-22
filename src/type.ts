@@ -39,3 +39,21 @@ type Server = {
 type ServersResponse = {
   servers: Server[];
 };
+
+type GitPullResponse = {
+  operation_id: number;
+};
+
+type GitDeploymentLog = {
+  git_url: string;
+  branch_name: string;
+  customer_id: string;
+  path: string;
+  result: string;
+  datetime: string;
+  description: string;
+};
+
+type GitDeploymentHistoryResponse = {
+  logs: GitDeploymentLog[];
+};

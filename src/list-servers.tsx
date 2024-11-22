@@ -1,4 +1,4 @@
-import { Action, ActionPanel, getPreferenceValues, List, Detail } from "@raycast/api";
+import { Action, ActionPanel, getPreferenceValues, List, Detail, showToast, Toast } from "@raycast/api";
 import { useEffect, useState } from "react";
 import got, { HTTPError } from "got";
 
@@ -23,7 +23,53 @@ async function fetchAccessToken(): Promise<string> {
   }
 }
 
-function ListApplications({ applications }: { applications: Application[] }) {
+async function triggerGitPull(serverId: string, appId: string) {
+  try {
+    const accessToken = await fetchAccessToken();
+
+    // Fetch the Git deployment history
+    const historyResponse: GitDeploymentHistoryResponse = await got
+      .get(`${API_URL}/git/history`, {
+        searchParams: {
+          server_id: serverId,
+          app_id: appId,
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      .json();
+
+    if (historyResponse.logs.length === 0) {
+      throw new Error("No deployment history found");
+    }
+
+    // Get the most recent deployment details
+    const { branch_name, path } = historyResponse.logs[0];
+
+    // Trigger the Git pull using the retrieved branch and path
+    const pullResponse: GitPullResponse = await got
+      .post(`${API_URL}/git/pull`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        form: {
+          server_id: serverId,
+          app_id: appId,
+          branch_name,
+          deploy_path: path,
+        },
+      })
+      .json();
+
+    await showToast(Toast.Style.Success, "Git Pull Triggered", `Operation ID: ${pullResponse.operation_id}`);
+  } catch (error) {
+    console.error("Error triggering git pull:", error);
+    await showToast(Toast.Style.Failure, "Error Triggering Git Pull", error?.toString());
+  }
+}
+
+function ListApplications({ serverId, applications }: { serverId: string; applications: Application[] }) {
   return (
     <List>
       {applications.map((app) => (
@@ -32,6 +78,11 @@ function ListApplications({ applications }: { applications: Application[] }) {
           title={app.label}
           subtitle={app.application}
           accessories={[{ text: app.app_version }]}
+          actions={
+            <ActionPanel>
+              <Action title="Trigger Git Pull" onAction={() => triggerGitPull(serverId, app.id)} />
+            </ActionPanel>
+          }
         />
       ))}
     </List>
@@ -78,7 +129,10 @@ export default function ListServers() {
           accessories={[{ text: server.status }]}
           actions={
             <ActionPanel>
-              <Action.Push title="View Applications" target={<ListApplications applications={server.apps} />} />
+              <Action.Push
+                title="View Applications"
+                target={<ListApplications serverId={server.id} applications={server.apps} />}
+              />
             </ActionPanel>
           }
         />
