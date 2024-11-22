@@ -1,4 +1,4 @@
-import { Action, ActionPanel, getPreferenceValues, List } from "@raycast/api";
+import { Action, ActionPanel, getPreferenceValues, List, Detail } from "@raycast/api";
 import { useEffect, useState } from "react";
 import got, { HTTPError } from "got";
 
@@ -21,6 +21,21 @@ async function fetchAccessToken(): Promise<string> {
     console.error("Error fetching access token:", error);
     throw error;
   }
+}
+
+function ListApplications({ applications }: { applications: Application[] }) {
+  return (
+    <List>
+      {applications.map((app) => (
+        <List.Item
+          key={app.id}
+          title={app.label}
+          subtitle={app.application}
+          accessories={[{ text: app.app_version }]}
+        />
+      ))}
+    </List>
+  );
 }
 
 export default function ListServers() {
@@ -63,7 +78,7 @@ export default function ListServers() {
           accessories={[{ text: server.status }]}
           actions={
             <ActionPanel>
-              <Action.CopyToClipboard content={server.label} />
+              <Action.Push title="View Applications" target={<ListApplications applications={server.apps} />} />
             </ActionPanel>
           }
         />
