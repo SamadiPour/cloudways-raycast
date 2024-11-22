@@ -1,6 +1,7 @@
 import { Action, ActionPanel, getPreferenceValues, List, Detail, showToast, Toast } from "@raycast/api";
 import { useEffect, useState } from "react";
 import got, { HTTPError } from "got";
+import { exec } from "child_process";
 
 const API_URL = "https://api.cloudways.com/api/v1";
 const EMAIL = getPreferenceValues().email;
@@ -69,10 +70,52 @@ async function triggerGitPull(serverId: string, appId: string) {
   }
 }
 
-function ListApplications({ serverId, applications }: { serverId: string; applications: Application[] }) {
+async function launchITermAndSSH(serverIP: string, serverUser: string, serverPassword: string, appDir: string) {
+  const appleScript = `
+    set sshUser to "${serverUser}@${serverIP}"
+    set sshPassword to "${serverPassword}"
+    set initialCommand to "cd applications/${appDir}/public_html"
+
+    tell application "iTerm"
+      activate
+      set newWindow to (create window with default profile)
+      tell current session of newWindow
+        write text "ssh -tt " & sshUser
+        delay 0.2 -- Give it a moment to start the SSH command
+        repeat
+          delay 0.2 -- Polling interval
+          set sessionOutput to get contents
+          if sessionOutput contains "password:" then
+            write text sshPassword
+            exit repeat
+          end if
+        end repeat
+        delay 0.2 -- Wait for the SSH session to establish
+        repeat
+          delay 0.2 -- Polling interval
+          set sessionOutput to get contents
+          if sessionOutput contains "~" then
+            write text initialCommand
+            exit repeat
+          end if
+        end repeat
+      end tell
+    end tell
+  `;
+
+  exec(`osascript -e '${appleScript}'`, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error executing AppleScript: ${error}`);
+      return;
+    }
+    console.log(`AppleScript output: ${stdout}`);
+  });
+}
+
+function ListApplications({ server }: { server: Server }) {
   return (
     <List>
-      {applications.map((app) => (
+      {server.apps.map((app) => (
         <List.Item
           key={app.id}
           title={app.label}
@@ -80,7 +123,11 @@ function ListApplications({ serverId, applications }: { serverId: string; applic
           accessories={[{ text: app.app_version }]}
           actions={
             <ActionPanel>
-              <Action title="Trigger Git Pull" onAction={() => triggerGitPull(serverId, app.id)} />
+              <Action title="Trigger Git Pull" onAction={() => triggerGitPull(server.id, app.id)} />
+              <Action
+                title="Launch in iTerm"
+                onAction={() => launchITermAndSSH(server.public_ip, server.master_user, server.master_password, app.sys_user)}
+              />
             </ActionPanel>
           }
         />
@@ -129,10 +176,7 @@ export default function ListServers() {
           accessories={[{ text: server.status }]}
           actions={
             <ActionPanel>
-              <Action.Push
-                title="View Applications"
-                target={<ListApplications serverId={server.id} applications={server.apps} />}
-              />
+              <Action.Push title="View Applications" target={<ListApplications server={server} />} />
             </ActionPanel>
           }
         />

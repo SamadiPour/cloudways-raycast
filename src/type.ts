@@ -32,6 +32,8 @@ type Server = {
   id: string;
   label: string;
   public_ip: string;
+  master_user: string;
+  master_password: string;
   status: string;
   apps: Application[];
 };
