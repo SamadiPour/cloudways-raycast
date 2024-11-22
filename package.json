@@ -17,6 +17,25 @@
       "mode": "view"
     }
   ],
+  "preferences": [
+    {
+      "name": "email",
+      "type": "textfield",
+      "required": true,
+      "title": "Account Email",
+      "description": "",
+      "link": "",
+      "placeholder": ""
+    },
+    {
+      "name": "apiKey",
+      "type": "password",
+      "required": true,
+      "title": "API Key",
+      "description": "",
+      "placeholder": ""
+    }
+  ],
   "dependencies": {
     "@raycast/api": "^1.86.0",
     "@raycast/utils": "^1.17.0",

@@ -1,25 +1,10 @@
-import { ActionPanel, Action, List, getPreferenceValues } from "@raycast/api";
+import { Action, ActionPanel, getPreferenceValues, List } from "@raycast/api";
 import { useEffect, useState } from "react";
 import got, { HTTPError } from "got";
 
 const API_URL = "https://api.cloudways.com/api/v1";
 const EMAIL = getPreferenceValues().email;
 const API_KEY = getPreferenceValues().apiKey;
-
-type AccessTokenResponse = {
-  access_token: string;
-};
-
-type Server = {
-  id: string;
-  label: string;
-  public_ip: string;
-  status: string;
-};
-
-type ServersResponse = {
-  servers: Server[];
-};
 
 async function fetchAccessToken(): Promise<string> {
   try {
@@ -32,13 +17,13 @@ async function fetchAccessToken(): Promise<string> {
       })
       .json();
     return data.access_token;
-  } catch (error: unknown) {
+  } catch (error) {
     console.error("Error fetching access token:", error);
     throw error;
   }
 }
 
-export default function Command() {
+export default function ListServers() {
   const [servers, setServers] = useState<Server[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -54,7 +39,7 @@ export default function Command() {
           })
           .json();
         setServers(data.servers);
-      } catch (error: unknown) {
+      } catch (error) {
         if (error instanceof HTTPError && error.response.statusCode === 401) {
           console.error("Error fetching servers: 401 Unauthorized - Invalid or missing access token");
         } else {
