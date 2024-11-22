@@ -8,13 +8,12 @@ const API_KEY = getPreferenceValues().apiKey;
 
 async function fetchAccessToken() {
   try {
-    const response = await got.post(`${API_URL}/oauth/access_token`, {
+    const data = await got.post(`${API_URL}/oauth/access_token`, {
       form: {
         email: EMAIL,
         api_key: API_KEY,
       },
-    });
-    const data = await response.json();
+    }).json();
     return data.access_token;
   } catch (error) {
     console.error("Error fetching access token:", error);
@@ -30,12 +29,11 @@ export default function Command() {
     async function fetchServers() {
       try {
         const accessToken = await fetchAccessToken();
-        const response = await got.get(`${API_URL}/server`, {
+        const data = await got.get(`${API_URL}/server`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
-        });
-        const data = await response.json();
+        }).json();
         setServers(data.servers);
       } catch (error) {
         if (error.response && error.response.statusCode === 401) {
@@ -58,7 +56,7 @@ export default function Command() {
           key={server.id}
           title={server.label}
           subtitle={server.public_ip}
-          accessories={[{ icon: Icon.Text, text: server.status }]}
+          accessories={[{ text: server.status }]}
           actions={
             <ActionPanel>
               <Action.CopyToClipboard content={server.label} />
