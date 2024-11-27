@@ -15,6 +15,12 @@
       "title": "List servers",
       "description": "",
       "mode": "view"
+    },
+    {
+      "name": "list-apps",
+      "title": "List apps",
+      "description": "",
+      "mode": "view"
     }
   ],
   "preferences": [
