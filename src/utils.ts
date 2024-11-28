@@ -6,9 +6,24 @@ export async function launchITermAndSSH(serverIP: string, serverUser: string, se
     set sshPassword to "${serverPassword}"
     set initialCommand to "cd applications/${appDir}/public_html"
 
+    tell application "System Events"
+      set processList to name of every process
+      set isRunning to "iTerm2" is in processList
+    end tell
+
     tell application "iTerm"
       activate
-      set newWindow to (create window with default profile)
+      delay (0.25)
+      set newWindow to current window
+      if isRunning is true or newWindow is missing value then
+        if newWindow is missing value then
+          set newWindow to (create window with default profile)
+        else
+          tell newWindow
+            create tab with default profile
+          end tell
+        end if
+      end if
       tell current session of newWindow
         write text "ssh -tt " & sshUser
         delay 0.2 -- Give it a moment to start the SSH command
